@@ -1,26 +1,30 @@
-version: '3.8'
-
 services:
   backend:
     build: ./backend
-    container_name: nestle-backend
-    ports:
-      - "8000:8000"
+    container_name: apex-backend
+    expose:
+      - "8000"
     environment:
       - PYTHONUNBUFFERED=1
     volumes:
       - ./backend:/app
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
     networks:
-      - nestle-network
+      - apex-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   frontend:
     build: ./frontend
-    container_name: nestle-frontend
-    ports:
-      - "3000:3000"
+    container_name: apex-frontend
+    expose:
+      - "3000"
     environment:
-      - API_BASE_URL=http://backend:8000
+      - API_BASE_URL=http://nginx/api
+      - NODE_ENV=development
     volumes:
       - ./frontend:/app
       - /app/node_modules
@@ -29,8 +33,20 @@ services:
       - backend
     command: npm run dev
     networks:
-      - nestle-network
+      - apex-network
+
+  nginx:
+    build: ./nginx
+    container_name: apex-nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - apex-network
+    restart: unless-stopped
 
 networks:
-  nestle-network:
+  apex-network:
     driver: bridge

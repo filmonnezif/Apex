@@ -95,4 +95,5 @@ class SimulationResponse(BaseModel):
     predicted_demand: float
     predicted_revenue: float
     elasticity_coefficient: float
+    demand_level: Optional[str] = "Normal"
     timestamp: str

@@ -555,6 +555,22 @@ class XGBoostAIService:
         
         final_revenue = price * final_demand
         
+        # Determine demand level category
+        if final_demand > baseline_demand * 1.3:
+            demand_level = "Exceptional"
+        elif final_demand > baseline_demand * 1.15:
+            demand_level = "Very High"
+        elif final_demand > baseline_demand * 1.05:
+            demand_level = "High"
+        elif final_demand > baseline_demand * 0.95:
+            demand_level = "Normal"
+        elif final_demand > baseline_demand * 0.85:
+            demand_level = "Below Average"
+        elif final_demand > baseline_demand * 0.7:
+            demand_level = "Low"
+        else:
+            demand_level = "Very Low"
+        
         return SimulationResponse(
             product_name=product_name,
             scenario={
@@ -575,5 +591,6 @@ class XGBoostAIService:
             predicted_demand=round(final_demand, 0),
             predicted_revenue=round(final_revenue, 2),
             elasticity_coefficient=round(adjusted_elasticity, 3),
+            demand_level=demand_level,
             timestamp=datetime.now().isoformat()
         )

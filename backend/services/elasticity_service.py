@@ -12,7 +12,7 @@ class ElasticityService:
     
     # Realistic business constraints
     MIN_MARGIN = 0.15  # Minimum 15% profit margin
-    MAX_PRICE_CHANGE = 2.0  # Maximum 200% price change (essentially uncapped for finding true optimum)
+    MAX_PRICE_CHANGE = 0.10  # Maximum 10% price increase (realistic business constraint)
     MIN_PRICE_CHANGE = -0.50  # Maximum 50% price decrease (reasonable floor)
     
     # Realistic price elasticities by category (based on industry research)
@@ -121,72 +121,81 @@ class ElasticityService:
         abs_price_change = abs(price_change_percent)
         
         if price_change_percent > 0:  # Price INCREASE
-            # Exponential punishment for large price increases
-            # Formula: factor = 1 + (price_change/X)^Y where Y > 1.5 for aggressive curve
-            # This creates VERY aggressive punishment for unrealistic increases
+            # VERY HEAVY exponential punishment for ANY price increases
+            # Formula: factor = 1 + (price_change/X)^Y where Y >= 2.5 for EXTREMELY aggressive curve
+            # Goal: Make increases above 10% essentially unprofitable
             
-            if abs_price_change > 100:  # >100% increase - COMPLETELY UNREALISTIC
-                # DEVASTATING punishment: 8x to 12x more elastic (demand will collapse)
-                base_punishment = 1.0 + (abs_price_change / 30) ** 2.2
-                adjustment_factor = min(12.0, base_punishment)
-                adjustment_reason = f"CATASTROPHIC price increase (+{abs_price_change:.0f}%) - DEVASTATING punishment (demand collapse)"
+            if abs_price_change > 20:  # >20% increase - CATASTROPHIC
+                # DEVASTATING punishment: 15x to 25x more elastic (demand will COLLAPSE)
+                base_punishment = 1.0 + (abs_price_change / 8) ** 3.0
+                adjustment_factor = min(25.0, base_punishment)
+                adjustment_reason = f"CATASTROPHIC price increase (+{abs_price_change:.0f}%) - DEVASTATING exponential punishment (market will reject)"
                 
-            elif abs_price_change > 70:  # 70-100% increase - EXTREMELY UNREALISTIC
-                # Massive punishment: 5x to 8x more elastic
-                base_punishment = 1.0 + (abs_price_change / 35) ** 2.0
-                adjustment_factor = min(8.0, base_punishment)
+            elif abs_price_change > 15:  # 15-20% increase - EXTREME
+                # Massive punishment: 8x to 15x more elastic
+                base_punishment = 1.0 + (abs_price_change / 10) ** 2.8
+                adjustment_factor = min(15.0, base_punishment)
                 adjustment_reason = f"EXTREME price increase (+{abs_price_change:.0f}%) - massive exponential punishment"
                 
-            elif abs_price_change > 50:  # 50-70% increase - VERY UNREALISTIC
-                # Very heavy punishment: 3x to 5x more elastic
-                base_punishment = 1.0 + (abs_price_change / 40) ** 1.8
-                adjustment_factor = min(5.5, base_punishment)
-                adjustment_reason = f"Very high price increase (+{abs_price_change:.0f}%) - very heavy exponential punishment"
+            elif abs_price_change > 12:  # 12-15% increase - VERY AGGRESSIVE
+                # Very heavy punishment: 5x to 8x more elastic
+                base_punishment = 1.0 + (abs_price_change / 12) ** 2.6
+                adjustment_factor = min(8.0, base_punishment)
+                adjustment_reason = f"Very aggressive price increase (+{abs_price_change:.0f}%) - very heavy exponential punishment"
                 
-            elif abs_price_change > 30:  # 30-50% increase - UNREALISTIC
-                # Heavy exponential punishment: 2x to 3.5x more elastic
-                base_punishment = 1.0 + (abs_price_change / 50) ** 1.6
+            elif abs_price_change > 10:  # 10-12% increase - AGGRESSIVE (target threshold)
+                # Heavy exponential punishment: 3.5x to 5x more elastic
+                base_punishment = 1.0 + (abs_price_change / 14) ** 2.4
+                adjustment_factor = min(5.0, base_punishment)
+                adjustment_reason = f"Aggressive price increase (+{abs_price_change:.0f}%) - heavy exponential punishment (above 10% threshold)"
+                
+            elif abs_price_change > 8:  # 8-10% increase - MODERATE-HIGH
+                # Strong exponential punishment: 2.5x to 3.5x more elastic
+                base_punishment = 1.0 + (abs_price_change / 16) ** 2.2
                 adjustment_factor = min(3.5, base_punishment)
-                adjustment_reason = f"High price increase (+{abs_price_change:.0f}%) - heavy exponential punishment"
+                adjustment_reason = f"Moderate-high price increase (+{abs_price_change:.0f}%) - strong exponential punishment"
                 
-            elif abs_price_change > 20:  # 20-30% increase - AGGRESSIVE
-                # Strong exponential punishment: 1.5x to 2.2x more elastic
-                base_punishment = 1.0 + (abs_price_change / 60) ** 1.4
-                adjustment_factor = min(2.2, base_punishment)
-                adjustment_reason = f"Aggressive price increase (+{abs_price_change:.0f}%) - strong exponential punishment"
-                
-            elif abs_price_change > 15:  # 15-20% increase - MODERATE
-                # Moderate exponential punishment: 1.3x to 1.6x more elastic
-                base_punishment = 1.0 + (abs_price_change / 80) ** 1.3
-                adjustment_factor = min(1.6, base_punishment)
+            elif abs_price_change > 6:  # 6-8% increase - MODERATE
+                # Moderate exponential punishment: 1.8x to 2.5x more elastic
+                base_punishment = 1.0 + (abs_price_change / 20) ** 2.0
+                adjustment_factor = min(2.5, base_punishment)
                 adjustment_reason = f"Moderate price increase (+{abs_price_change:.0f}%) - moderate exponential punishment"
                 
-            else:  # <15% increase
-                # Linear adjustment based on demand trend
-                if demand_change_percent > 5:
-                    adjustment_factor = 0.7  # Strong demand = less punishment
-                    adjustment_reason = f"Small increase (+{abs_price_change:.0f}%) with strong demand - forgiving"
-                elif demand_change_percent > 0:
-                    adjustment_factor = 0.85
-                    adjustment_reason = f"Small increase (+{abs_price_change:.0f}%) with growing demand - slightly forgiving"
+            elif abs_price_change > 4:  # 4-6% increase - LOW-MODERATE
+                # Noticeable exponential punishment: 1.5x to 1.8x more elastic
+                base_punishment = 1.0 + (abs_price_change / 25) ** 1.8
+                adjustment_factor = min(1.8, base_punishment)
+                adjustment_reason = f"Low-moderate price increase (+{abs_price_change:.0f}%) - noticeable exponential punishment"
+                
+            else:  # <4% increase - SMALL
+                # Quadratic punishment even for small increases
+                base_punishment = 1.0 + (abs_price_change / 30) ** 1.6
+                adjustment_factor = min(1.4, base_punishment)
+                
+                # Minor modulation based on demand trend
+                if demand_change_percent > 8:
+                    adjustment_factor *= 0.85  # Strong demand = slight relief
+                    adjustment_reason = f"Small increase (+{abs_price_change:.0f}%) with very strong demand - reduced punishment"
+                elif demand_change_percent > 3:
+                    adjustment_factor *= 0.95  # Some demand = minimal relief
+                    adjustment_reason = f"Small increase (+{abs_price_change:.0f}%) with good demand - slight punishment"
                 else:
-                    adjustment_factor = 1.1
-                    adjustment_reason = f"Small increase (+{abs_price_change:.0f}%) with weak demand - slight punishment"
+                    adjustment_reason = f"Small increase (+{abs_price_change:.0f}%) - quadratic punishment"
             
-            # Modulate based on demand trend for large increases
-            if abs_price_change > 15:
+            # Modulate based on demand trend for ALL price increases
+            if abs_price_change > 4:  # Only modulate for increases above 4%
                 if demand_change_percent > 10:  # Very strong demand
-                    adjustment_factor *= 0.7  # Reduce punishment by 30%
-                    adjustment_reason += " | Strong demand reduces punishment by 30%"
+                    adjustment_factor *= 0.75  # Reduce punishment by 25%
+                    adjustment_reason += " | Very strong demand reduces punishment by 25%"
                 elif demand_change_percent > 5:  # Strong demand
-                    adjustment_factor *= 0.85  # Reduce punishment by 15%
-                    adjustment_reason += " | Good demand reduces punishment by 15%"
+                    adjustment_factor *= 0.90  # Reduce punishment by 10%
+                    adjustment_reason += " | Strong demand reduces punishment by 10%"
                 elif demand_change_percent < -10:  # Declining demand
-                    adjustment_factor *= 1.3  # Increase punishment by 30%
-                    adjustment_reason += " | Declining demand AMPLIFIES punishment by 30%"
+                    adjustment_factor *= 1.5  # Increase punishment by 50%
+                    adjustment_reason += " | Declining demand SEVERELY AMPLIFIES punishment by 50%"
                 elif demand_change_percent < -5:  # Weak demand
-                    adjustment_factor *= 1.15  # Increase punishment by 15%
-                    adjustment_reason += " | Weak demand amplifies punishment by 15%"
+                    adjustment_factor *= 1.25  # Increase punishment by 25%
+                    adjustment_reason += " | Weak demand amplifies punishment by 25%"
                     
         elif price_change_percent < 0:  # Price DECREASE
             # Exponential REWARD for large price cuts = explosive demand influx
@@ -339,6 +348,7 @@ class ElasticityService:
         """
         Find the profit-maximizing price using ADJUSTED elasticity
         Uses iterative optimization that accounts for dynamic elasticity changes
+        DEMAND-RESPONSIVE: Higher demand locations allow higher price increases
         """
         # Get BASE elasticity for this product category
         base_elasticity = cls.get_product_elasticity(
@@ -349,14 +359,71 @@ class ElasticityService:
         # Estimate cost
         estimated_cost = cls.estimate_cost(product_name, current_price)
         
-        # Define price search range
+        # DYNAMIC DEMAND-BASED PRICING FLEXIBILITY
+        # Calculate demand level relative to a baseline (500 units as reference)
+        baseline_demand = 500
+        demand_ratio = current_demand / baseline_demand
+        
+        # CONTINUOUS SCALING: Price increase allowance grows smoothly with demand
+        # Formula: max_increase = min_rate + (demand_ratio - min_ratio) * scale_factor
+        # This creates a smooth curve instead of rigid tiers
+        
+        if demand_ratio >= 2.0:
+            # Exceptional demand (1000+ units): Allow up to 10% increase
+            max_price_increase = 0.10
+            demand_context = "EXCEPTIONAL"
+        elif demand_ratio >= 0.4:
+            # Dynamic scaling between 0.4x and 2.0x demand
+            # Range: 2% (very low) to 10% (exceptional)
+            # Linear interpolation for smooth transitions
+            min_increase = 0.02  # Floor at 2% for very low demand
+            max_increase = 0.10  # Ceiling at 10% for exceptional demand
+            
+            # Normalize demand_ratio to 0-1 range
+            normalized_ratio = (demand_ratio - 0.4) / (2.0 - 0.4)
+            normalized_ratio = max(0, min(1, normalized_ratio))  # Clamp to [0,1]
+            
+            # Apply smooth scaling with slight curve (power of 0.9 for gradual acceleration)
+            max_price_increase = min_increase + (max_increase - min_increase) * (normalized_ratio ** 0.9)
+            
+            # Descriptive context based on ratio
+            if demand_ratio >= 1.5:
+                demand_context = "VERY HIGH"
+            elif demand_ratio >= 1.2:
+                demand_context = "HIGH"
+            elif demand_ratio >= 0.9:
+                demand_context = "ABOVE AVERAGE"
+            elif demand_ratio >= 0.7:
+                demand_context = "AVERAGE"
+            elif demand_ratio >= 0.5:
+                demand_context = "BELOW AVERAGE"
+            else:
+                demand_context = "LOW"
+        else:
+            # Extremely low demand (<200 units): Severely restrict to 2%
+            max_price_increase = 0.02
+            demand_context = "VERY LOW"
+        
+        # Define price search range with DEMAND-ADJUSTED maximum increase
+        strict_max_price = current_price * (1 + max_price_increase)
+        
         min_price = max(
             estimated_cost * (1 + cls.MIN_MARGIN),  # Must maintain minimum margin
-            current_price * (1 + cls.MIN_PRICE_CHANGE)  # Can't drop more than 15%
+            current_price * (1 + cls.MIN_PRICE_CHANGE)  # Can't drop more than 50%
         )
-        max_price = current_price * (1 + cls.MAX_PRICE_CHANGE)  # Can't increase more than 15%
+        max_price = strict_max_price
         
-        print(f"\n🎯 Starting ADJUSTED ELASTICITY optimization for {product_name}")
+        # If minimum margin requirement conflicts with demand-adjusted cap, prioritize demand cap
+        if min_price > max_price:
+            print(f"  ⚠️ WARNING: Margin requirement conflicts with demand-adjusted cap.")
+            print(f"  ⚠️ Accepting lower margin to respect demand-based pricing constraint.")
+            min_price = current_price * 0.95  # At least search from -5% to adjusted max
+        
+        print(f"\n🎯 Starting DYNAMIC DEMAND-RESPONSIVE optimization for {product_name}")
+        print(f"  Location: {emirate} - {store_type}")
+        print(f"  Current demand: {current_demand:.0f} units (Demand level: {demand_context})")
+        print(f"  Demand ratio: {demand_ratio:.2f}x baseline")
+        print(f"  Max price increase allowed: +{max_price_increase*100:.1f}% (dynamically scaled)")
         print(f"  Base elasticity: {base_elasticity:.3f}")
         print(f"  Price range: AED {min_price:.2f} - {max_price:.2f}")
         
@@ -456,11 +523,11 @@ class ElasticityService:
         # Add constraint note with more detail
         if is_constrained:
             if best_price >= max_price - 0.01:
-                reasoning += f" (Hitting upper price limit of +{cls.MAX_PRICE_CHANGE*100:.0f}% - extreme price increase detected.)"
+                reasoning += f" (Hitting upper price limit of +{max_price_increase*100:.0f}% for {demand_context} demand - location-specific constraint.)"
             elif best_price <= min_price + 0.01:
                 reasoning += f" (Limited by minimum {cls.MIN_MARGIN*100:.0f}% margin requirement - lower prices would be unprofitable.)"
         else:
-            reasoning += f" (True optimum found within feasible range.)"
+            reasoning += f" (True optimum found within demand-adjusted range.)"
         
         # Prepare curve data (subsample for efficiency)
         curve_data = all_results[::2]  # Every other point
@@ -474,6 +541,8 @@ class ElasticityService:
             'elasticity_type': elasticity_type,
             'estimated_cost': round(estimated_cost, 2),
             'is_constrained': is_constrained,
+            'demand_level': demand_context,
+            'demand_ratio': round(demand_ratio, 2),
             'current_metrics': {
                 'demand': round(current_demand, 1),
                 'revenue': round(current_revenue, 2),
@@ -496,8 +565,10 @@ class ElasticityService:
                 'min_price': round(min_price, 2),
                 'max_price': round(max_price, 2),
                 'min_margin_pct': cls.MIN_MARGIN * 100,
-                'max_price_increase_pct': cls.MAX_PRICE_CHANGE * 100,
-                'max_price_decrease_pct': abs(cls.MIN_PRICE_CHANGE) * 100
+                'max_price_increase_pct': round(max_price_increase * 100, 1),  # Dynamic demand-adjusted
+                'max_price_decrease_pct': abs(cls.MIN_PRICE_CHANGE) * 100,
+                'demand_adjusted': True,
+                'dynamic_scaling': True
             },
             'price_demand_curve': [
                 {
