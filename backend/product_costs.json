@@ -1,0 +1,47 @@
+{
+  "NESCAFE 3IN1 CLASSIC 20GX24 BOX (CM)": {
+    "product_name": "NESCAFE 3IN1 CLASSIC 20GX24 BOX (CM)",
+    "category": "TOTAL COFFEE",
+    "brand": "NESCAFE",
+    "latest_price": 6.33,
+    "cost": 5.38,
+    "margin_percentage": 15.0,
+    "latest_date": "2024-12-31"
+  },
+  "NESCAFE LATTE 240ML TIN": {
+    "product_name": "NESCAFE LATTE 240ML TIN",
+    "category": "ICE COFFEE",
+    "brand": "NESCAFE",
+    "latest_price": 1.58,
+    "cost": 1.34,
+    "margin_percentage": 15.0,
+    "latest_date": "2024-12-31"
+  },
+  "NESTLE CHOCAPIC C/B 25GR (C) WRP": {
+    "product_name": "NESTLE CHOCAPIC C/B 25GR (C) WRP",
+    "category": "MUESLI / CEREAL & NUTRITIONAL BAR",
+    "brand": "NESTLE",
+    "latest_price": 0.6,
+    "cost": 0.51,
+    "margin_percentage": 15.0,
+    "latest_date": "2024-12-31"
+  },
+  "NESTLE NESQUIK 330GR(C) BOX": {
+    "product_name": "NESTLE NESQUIK 330GR(C) BOX",
+    "category": "BREAKFAST CEREAL",
+    "brand": "NESTLE",
+    "latest_price": 3.69,
+    "cost": 3.14,
+    "margin_percentage": 15.0,
+    "latest_date": "2024-12-31"
+  },
+  "PURINA FRISK.CHICKEN IN GRAVY JUNI.85G S": {
+    "product_name": "PURINA FRISK.CHICKEN IN GRAVY JUNI.85G S",
+    "category": "PET CARE",
+    "brand": "PURINA FRISKIES",
+    "latest_price": 0.56,
+    "cost": 0.48,
+    "margin_percentage": 15.0,
+    "latest_date": "2024-12-31"
+  }
+}
